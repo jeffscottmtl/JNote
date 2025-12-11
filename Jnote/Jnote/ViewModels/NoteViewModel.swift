@@ -5,6 +5,7 @@ import Combine
 final class NoteViewModel: ObservableObject {
     @Published var content: String = "" {
         didSet {
+            guard !isApplyingRemoteUpdate else { return }
             if oldValue != content {
                 syncService?.updateContent(content)
             }
@@ -18,6 +19,7 @@ final class NoteViewModel: ObservableObject {
 
     private var syncService: NoteSyncService?
     private var cancellables = Set<AnyCancellable>()
+    private var isApplyingRemoteUpdate = false
 
     init() {
         setupSyncService()
@@ -31,10 +33,12 @@ final class NoteViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] note in
                 guard let self, let note else { return }
+                self.isApplyingRemoteUpdate = true
                 if self.content != note.content {
                     self.content = note.content
                 }
                 self.lastUpdated = note.updatedAt
+                self.isApplyingRemoteUpdate = false
             }
             .store(in: &cancellables)
 
@@ -58,6 +62,21 @@ final class NoteViewModel: ObservableObject {
 
     func forceSyncNow() async {
         await syncService?.forceSyncNow()
+    }
+
+    func handleScenePhase(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            Task { [weak self] in
+                await self?.syncService?.forceSyncNow()
+            }
+        case .background:
+            Task { [weak self] in
+                await self?.syncService?.forceSyncNow()
+            }
+        default:
+            break
+        }
     }
 
     func toggleBold() {
