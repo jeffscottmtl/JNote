@@ -1,5 +1,8 @@
 import Foundation
 import Combine
+#if canImport(WidgetKit)
+import WidgetKit
+#endif
 
 @MainActor
 final class NoteSyncService: ObservableObject {
@@ -165,6 +168,13 @@ final class NoteSyncService: ObservableObject {
         guard let data = try? encoder.encode(note) else { return }
         UserDefaults(suiteName: "group.com.jnote.shared")?.set(data, forKey: "savedNote")
         UserDefaults.standard.set(data, forKey: "savedNote")
+        refreshWidgets()
+    }
+
+    private func refreshWidgets() {
+        #if canImport(WidgetKit)
+        WidgetCenter.shared.reloadAllTimelines()
+        #endif
     }
 }
 

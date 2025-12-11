@@ -68,6 +68,12 @@ struct JnoteWidgetEntryView: View {
     @Environment(\.widgetFamily) var family
 
     var body: some View {
+        content
+            .widgetURL(URL(string: "jnote://open"))
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch family {
         case .systemSmall:
             SmallWidgetView(entry: entry)

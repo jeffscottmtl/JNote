@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @ObservedObject var viewModel: NoteViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
@@ -39,6 +40,12 @@ struct ContentView: View {
         }
         .task {
             await viewModel.loadNote()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            viewModel.handleScenePhase(newPhase)
+        }
+        .onOpenURL { _ in
+            Task { await viewModel.forceSyncNow() }
         }
     }
 }
